@@ -10,3 +10,103 @@
       --white: #fff;
       --text: #111827;
       --muted: #6b7280;
+      --shadow: 0 1px 4px rgba(0,0,0,.08);
+      --radius: 12px;
+      --green: #34c759;
+      --red: #ff3b30;
+      --orange: #ff9500;
+      --blue: #0a84ff;
+      --purple: #af52de;
+      --yellow: #ffd60a;
+      --cyan: #5ac8fa;
+      --peach: #ffab91;
+      --grey: #b0bec5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px; }
+    h1 { text-align: center; font-size: 26px; font-weight: 700; margin-bottom: 24px; letter-spacing: .5px; text-transform: uppercase; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 32px; }
+    .card { background: var(--white); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
+    .label { font-size: 13px; color: var(--muted); text-transform: uppercase; font-weight: 600; letter-spacing: .4px; }
+    .value { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    .detail { display: block; max-width: 480px; margin: 0 auto; }
+    .row { margin-bottom: 12px; }
+    .row-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; text-transform: capitalize; }
+    .bar-wrap { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+    .bar { height: 100%; border-radius: 4px; }
+    .note-card { background: var(--white); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); max-width: 640px; margin: 32px auto 0; font-size: 14px; line-height: 1.45; color: var(--text); }
+    .note-card strong { font-weight: 600; }
+    .download { display: block; margin: 24px auto 0; text-align: center; }
+    button { padding: 10px 20px; border: none; background: var(--blue); color: white; font-weight: 600; border-radius: var(--radius); cursor: pointer; box-shadow: var(--shadow); }
+  </style>
+</head>
+<body>
+  <h1>💰 FINANCIAL OVERVIEW – JULY 2025</h1>
+  <div class="grid" id="summary"></div>
+  <div class="detail">
+    <div class="card" id="expenses"></div>
+  </div>
+  <div class="note-card" id="note"></div>
+  <div class="download"><button onclick="downloadPDF()">Download PDF</button></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    const incomeData = [
+      { name: 'BJJ (Gym)', amount: 1000 },
+      { name: 'Full‑time (Gen)', amount: 71000 },
+      { name: 'Side Hustle (Apartments)', amount: 24100 },
+    ];
+    const expenseData = [
+      { name: 'Household', amount: 23176 },
+      { name: 'Food + Groceries', amount: 15000 },
+      { name: 'Personal Loan', amount: 30000 },
+      { name: 'Wife Budget', amount: 4000 },
+      { name: 'Husband Budget', amount: 4000 },
+      { name: 'Dog (Care + Food)', amount: 3700 },
+      { name: 'Transportation', amount: 3300 },
+      { name: 'Investment (Mortgage 2)', amount: 400 },
+    ];
+    const COLORS = ['var(--green)','var(--orange)','var(--blue)','var(--purple)','var(--red)','var(--yellow)','var(--cyan)','var(--peach)','var(--grey)'];
+    const fmt = n => n.toLocaleString('cs-CZ') + ' Kč';
+
+    const totalIncome = incomeData.reduce((s,i)=>s+i.amount,0);
+    const totalExpenses = expenseData.reduce((s,i)=>s+i.amount,0);
+    const surplus = totalIncome - totalExpenses;
+    const savingsRate = totalIncome === 0 ? 0 : (surplus/totalIncome)*100;
+    const expensesPct = totalIncome === 0 ? 0 : (totalExpenses/totalIncome)*100;
+
+    const arrowSymbol = surplus >= 0 ? '▲' : '▼';
+    const arrowColor = surplus >= 0 ? 'var(--green)' : 'var(--red)';
+
+    const summary = [
+      { label:'INCOME', value: fmt(totalIncome), color:'var(--green)' },
+      { label:'EXPENSES', value: `${fmt(totalExpenses)} (${expensesPct.toFixed(1)} %)`, color:'var(--red)' },
+      { label: surplus >=0 ? 'SURPLUS' : 'DEFICIT', value: `${fmt(surplus)} <span style="color:${arrowColor};font-size:18px;">${arrowSymbol}</span>`, color: arrowColor },
+      { label:'SAVINGS RATE', value: `${savingsRate.toFixed(1)} %`, color: arrowColor },
+    ];
+    const summaryEl = document.getElementById('summary');
+    summary.forEach(c => {
+      const card = document.createElement('div'); card.className = 'card';
+      card.innerHTML = `<span class="label" style="color:${c.color};">${c.label}</span><span class="value" style="color:${c.color};">${c.value}</span>`;
+      summaryEl.appendChild(card);
+    });
+
+    const expenseEl = document.getElementById('expenses');
+    expenseEl.innerHTML = `<h2 style="margin:0 0 12px;font-size:18px;text-transform:uppercase;">Expenses – ${fmt(totalExpenses)}</h2>`;
+    expenseData.sort((a,b)=>b.amount-a.amount).forEach((row,i)=>{
+      const pct=(row.amount/totalExpenses)*100;
+      const div=document.createElement('div');div.className='row';
+      div.innerHTML=`<div class='row-head'><span>${row.name}</span><span>${pct.toFixed(1)} %</span></div><div class='bar-wrap'><div class='bar' style='background:${COLORS[i%COLORS.length]};width:${pct}%'></div></div>`;
+      expenseEl.appendChild(div);
+    });
+
+    const note = document.getElementById('note');
+    note.innerHTML = `<strong>Monthly Reflection:</strong> This month we covered <strong>${expensesPct.toFixed(1)} %</strong> of our income with expenses, leaving a surplus of <strong>${fmt(surplus)}</strong>. That’s a <strong>${savingsRate.toFixed(1)} %</strong> savings rate — a solid step toward our goals. Great teamwork, let’s keep building on this momentum! 💪❤️`;
+
+    function downloadPDF() {
+      const element = document.body;
+      html2pdf().from(element).save('budget-report-july-2025.pdf');
+    }
+  </script>
+</body>
+</html>
